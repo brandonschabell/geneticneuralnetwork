@@ -27,3 +27,12 @@ def predict_value(row):
     return prediction
 
 df.loc[:,'pred'] = df.apply(lambda row: predict_value(row), axis=1)
+
+print("Initial model summary:")
+print(model.summary())
+
+print("Mutating...")
+nn.mutate()
+model_mutated = nn.get_model()
+print("New model summary:")
+print(model_mutated.summary())

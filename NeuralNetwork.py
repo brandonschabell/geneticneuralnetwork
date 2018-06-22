@@ -6,10 +6,13 @@ from keras import backend as K
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
 import random
+import math
 
 
 class NeuralNetwork:
     mutatable_params = ['neuron_counts', 'activation_functions', 'layer_count']
+    activations_list = ['softmax', 'elu', 'selu', 'softplus', 'softsign', 
+                        'relu', 'tanh', 'sigmoid', 'hard_sigmoid', 'linear']
     
     def r2_keras(y_true, y_pred):
         SS_res =  K.sum(K.square(y_true - y_pred)) 
@@ -50,6 +53,31 @@ class NeuralNetwork:
         self.metrics = metrics
         self.model = Sequential()
         self.is_processed = False
+    
+    
+    def mutate(self):
+        self.model = Sequential()
+        self.is_processed = False
+        param = random.choice(self.mutatable_params)
+        if param == 'neuron_counts':
+            if len(self.hidden_layer_neuron_counts) == 0:
+                return self.mutate()
+            index = random.randint(0, len(self.hidden_layer_neuron_counts) - 1)
+            cur_val = self.hidden_layer_neuron_counts[index]
+            if random.random() > 0.5:
+                self.hidden_layer_neuron_counts[index] = cur_val + 1
+            else:
+                self.hidden_layer_neuron_counts[index] = cur_val - 1
+        elif param == 'activation_functions':
+            index = random.randint(0, len(self.activation_functions) - 1)
+            new_val = random.choice(self.activations_list)
+            self.activation_functions[index] = new_val
+        elif param == 'layer_count':
+            new_neuron_count = random.randint(
+                    math.ceil(self.input_dimension * 0.5),
+                    self.input_dimension * 2)
+            self.hidden_layer_neuron_counts.insert(0, new_neuron_count)
+            self.activation_functions.insert(1, self.activation_functions[0])
     
     
     def process_model(self):
