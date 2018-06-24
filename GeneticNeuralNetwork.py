@@ -22,24 +22,20 @@ def diff(y_true, y_pred):
     return K.mean(abs(y_pred - y_true))
 
 
-
-
-
 class Population:
     def __init__(self, 
                  count,
-                 retain_percentage,
-                 input_dimension,
-                 max_epoch=200,
-                 min_epoch=1,
+                 x,
+                 y,
+                 retain_percentage=0.6,
+                 max_epoch=100,
+                 min_epoch=2,
                  min_lr=0.0001,
                  max_lr=0.1,
                  percentage_to_randomly_spawn=0.05,
-                 x=None,
-                 y=None,
-                 mutate_chance=0.2,
+                 mutate_chance=0.25,
                  batch_size=None,
-                 verbose=1,
+                 verbose=0,
                  validation_split=0.3, 
                  learning_rate=0.001, 
                  kernel_initializer='normal', 
@@ -47,7 +43,7 @@ class Population:
                  metrics=[r2_keras, diff]):
         self.population = []
         self.count = count
-        self.input_dimension = input_dimension
+        self.input_dimension = len(x.transpose())
         self.percentage_to_randomly_spawn = percentage_to_randomly_spawn
         self.x = x
         self.y = y
@@ -229,16 +225,16 @@ class NeuralNetwork:
                     return self.mutate()
                 self.hidden_layer_neuron_counts[index] = cur_val - 1
         elif param == 'activation_functions':
-            index = random.randint(0, len(ACTIVATIONS_LIST) - 1)
+            index = random.randint(0, len(self.activation_functions) - 1)
             new_val = random.choice(ACTIVATIONS_LIST)
-            ACTIVATIONS_LIST[index] = new_val
+            self.activation_functions[index] = new_val
         elif param == 'layer_count':
             if random.random() > 0.5:
                 new_neuron_count = random.randint(
                         math.ceil(self.input_dimension * 0.5),
                         self.input_dimension * 2)
                 self.hidden_layer_neuron_counts.insert(0, new_neuron_count)
-                self.activation_functions.insert(1, ACTIVATIONS_LIST[0])
+                self.activation_functions.insert(1, self.activation_functions[0])
             elif len(self.hidden_layer_neuron_counts) > 0:
                 index = random.randint(0, len(self.hidden_layer_neuron_counts) - 1)
                 del self.hidden_layer_neuron_counts[index]
