@@ -60,6 +60,7 @@ class Population:
         self.max_lr = max_lr
         self.min_epoch = min_epoch
         self.max_epoch = max_epoch
+        self.grades = None
         for i in range(count):
             self.population.append(self.create_random_net())
     
@@ -74,7 +75,8 @@ class Population:
             sys.stdout.write("\rChecking net #{} of {}".format(net_iter, net_count))
             graded.append((nn.get_score(), nn))
         print()
-        graded = [x[1] for x in sorted(graded, key=lambda x: x[0], reverse=False)]
+        self.grades = sorted(graded, key=lambda x: x[0], reverse=False)
+        graded = [x[1] for x in self.grades]
         retained_length = int(len(graded) * self.retain_percentage)
         keep = graded[:retained_length]
         m_count = 0
@@ -100,6 +102,21 @@ class Population:
                 keep.append(keep[net1].breed(keep[net2]))
         print("Bred {} nets.".format(b_count))
         self.population = keep
+    
+    
+    def get_final_scores(self):
+        net_count = len(self.population)
+        net_iter = 0
+        graded = []
+        for nn in self.population:
+            net_iter += 1
+            sys.stdout.flush()
+            sys.stdout.write("\rChecking net #{} of {}".format(net_iter, net_count))
+            graded.append((nn.get_score(), nn))
+        print()
+        self.grades = sorted(graded, key=lambda x: x[0], reverse=False)
+        graded = [x[1] for x in self.grades]
+        self.keep = graded
 
     
     def get_top_score(self):
@@ -132,6 +149,27 @@ class Population:
                            kernel_initializer=self.kernel_initializer, 
                            loss_function=self.loss_function, 
                            metrics=self.metrics)
+    
+    
+    def add_manual_net(self, hidden_layer_neuron_counts, activation_functions, epochs, learning_rate):
+        nn = NeuralNetwork(input_dimension=self.input_dimension, 
+                           hidden_layer_neuron_counts=hidden_layer_neuron_counts, 
+                           activation_functions=activation_functions,
+                           min_lr=self.min_lr,
+                           max_lr=self.max_lr,
+                           min_epoch=self.min_epoch,
+                           max_epoch=self.max_epoch,
+                           x=self.x,
+                           y=self.y,
+                           batch_size=self.batch_size,
+                           epochs=epochs,
+                           verbose=self.verbose,
+                           validation_split=self.validation_split, 
+                           learning_rate=learning_rate, 
+                           kernel_initializer=self.kernel_initializer, 
+                           loss_function=self.loss_function, 
+                           metrics=self.metrics)
+        self.population.append(nn)
     
 
 class NeuralNetwork:
@@ -234,7 +272,10 @@ class NeuralNetwork:
                         math.ceil(self.input_dimension * 0.5),
                         self.input_dimension * 2)
                 self.hidden_layer_neuron_counts.insert(0, new_neuron_count)
-                self.activation_functions.insert(1, self.activation_functions[0])
+                if len(self.activation_functions) > 0:
+                    self.activation_functions.insert(1, self.activation_functions[0])
+                else:
+                    self.activation_functions.append(random.choice(ACTIVATIONS_LIST))
             elif len(self.hidden_layer_neuron_counts) > 0:
                 index = random.randint(0, len(self.hidden_layer_neuron_counts) - 1)
                 del self.hidden_layer_neuron_counts[index]
