@@ -40,7 +40,9 @@ class Population:
                  learning_rate=0.001, 
                  kernel_initializer='normal', 
                  loss_function='mean_squared_error', 
-                 metrics=[r2_keras, diff]):
+                 metrics=[r2_keras, diff],
+                 optimization='r2',
+                 optimization_maximize=True):
         self.population = []
         self.count = count
         self.input_dimension = len(x.transpose())
@@ -60,6 +62,8 @@ class Population:
         self.max_lr = max_lr
         self.min_epoch = min_epoch
         self.max_epoch = max_epoch
+        self.optimization = optimization
+        self.optimization_maximize = optimization_maximize
         self.grades = None
         for i in range(count):
             self.population.append(self.create_random_net())
@@ -75,7 +79,7 @@ class Population:
             sys.stdout.write("\rChecking net #{} of {}".format(net_iter, net_count))
             graded.append((nn.get_score(), nn))
         print()
-        self.grades = sorted(graded, key=lambda x: x[0], reverse=False)
+        self.grades = sorted(graded, key=lambda x: x[0], reverse=self.optimization_maximize)
         graded = [x[1] for x in self.grades]
         retained_length = int(len(graded) * self.retain_percentage)
         keep = graded[:retained_length]
@@ -114,9 +118,9 @@ class Population:
             sys.stdout.write("\rChecking net #{} of {}".format(net_iter, net_count))
             graded.append((nn.get_score(), nn))
         print()
-        self.grades = sorted(graded, key=lambda x: x[0], reverse=False)
+        self.grades = sorted(graded, key=lambda x: x[0], reverse=self.optimization_maximize)
         graded = [x[1] for x in self.grades]
-        self.keep = graded
+        self.population = graded
 
     
     def get_top_score(self):
@@ -141,6 +145,8 @@ class Population:
                            max_epoch=self.max_epoch,
                            x=self.x,
                            y=self.y,
+                           optimization=self.optimization,
+                           optimization_maximize=self.optimization_maximize,
                            batch_size=self.batch_size,
                            epochs=None,
                            verbose=self.verbose,
@@ -159,6 +165,8 @@ class Population:
                            max_lr=self.max_lr,
                            min_epoch=self.min_epoch,
                            max_epoch=self.max_epoch,
+                           optimization=self.optimization,
+                           optimization_maximize=self.optimization_maximize,
                            x=self.x,
                            y=self.y,
                            batch_size=self.batch_size,
@@ -181,6 +189,8 @@ class NeuralNetwork:
                  max_lr,
                  min_epoch,
                  max_epoch,
+                 optimization,
+                 optimization_maximize,
                  x=None,
                  y=None,
                  batch_size=None,
@@ -198,6 +208,8 @@ class NeuralNetwork:
         self.max_lr = max_lr
         self.min_epoch = min_epoch
         self.max_epoch = max_epoch
+        self.optimization = optimization
+        self.optimization_maximize = optimization_maximize
         self.x = x
         self.y = y
         self.batch_size = batch_size
@@ -230,6 +242,8 @@ class NeuralNetwork:
         result.max_lr = self.max_lr
         result.min_epoch = self.min_epoch
         result.max_epoch = self.max_epoch
+        result.optimization = self.optimization
+        result.optimization_maximize = self.optimization_maximize
         result.x = self.x
         result.y = self.y
         result.batch_size = self.batch_size
@@ -345,7 +359,10 @@ class NeuralNetwork:
                                 epochs=self.epochs, 
                                 verbose=self.verbose,
                                 validation_split=self.validation_split).history
-            self.score = history['val_diff'][-1]
+            if self.optimization == 'r2':
+                self.score = history['val_r2_keras'][-1]
+            else:
+                self.score = history['val_diff'][-1]
         return self.score
     
     
